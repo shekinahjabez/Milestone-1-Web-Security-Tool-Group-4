@@ -10,6 +10,172 @@ class InputValidator:
     """Comprehensive input validation and sanitization"""
     
     @staticmethod
+    def validate_full_name(name):
+        """
+        Validates the full name field.
+        Rules: No numbers, only spaces/hyphens/apostrophes as special chars, min 2 chars
+        """
+        errors = []
+        
+        if len(name) < 2:
+            errors.append("Full Name must be at least 2 characters long")
+        
+        # Check for numbers
+        if re.search(r'\d', name):
+            errors.append("Full Name cannot contain numbers")
+        
+        # Check for invalid special characters (allow only space, hyphen, apostrophe)
+        if re.search(r'[^a-zA-Z\s\'-]', name):
+            errors.append("Full Name contains invalid special characters")
+        
+        return len(errors) == 0, errors
+    
+    @staticmethod
+    def validate_email_simple(email):
+        """
+        Validates the email address.
+        Rules: Must have @, domain extension, no spaces, no leading special char
+        """
+        errors = []
+        
+        # Check for spaces
+        if ' ' in email:
+            errors.append("Email cannot contain spaces")
+        
+        # Check if starts with special character
+        if email and not email[0].isalnum():
+            errors.append("Email cannot start with a special character")
+        
+        # Check for @ symbol
+        if '@' not in email:
+            errors.append("Email must contain '@' symbol")
+        
+        # Check for domain extension
+        if not re.search(r'\.[a-zA-Z]{2,}$', email):
+            errors.append("Email must contain a valid domain (e.g., .com, .org)")
+        
+        return len(errors) == 0, errors
+    
+    @staticmethod
+    def validate_username(username):
+        """
+        Validates the username.
+        Rules: Only letters/numbers/underscores, 4-16 chars, cannot start with number
+        """
+        errors = []
+        
+        if len(username) < 4:
+            errors.append("Username must be at least 4 characters")
+        
+        if len(username) > 16:
+            errors.append("Username cannot exceed 16 characters")
+        
+        # Check if starts with a number
+        if username and username[0].isdigit():
+            errors.append("Username cannot start with a number")
+        
+        # Check for invalid characters (only letters, numbers, underscores allowed)
+        if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', username):
+            errors.append("Username can only contain letters, numbers, and underscores")
+        
+        return len(errors) == 0, errors
+    
+    @staticmethod
+    def validate_message(message):
+        """
+        Validates the message/comment field.
+        Rules: Not empty, max 250 chars, no harmful patterns
+        """
+        errors = []
+        
+        if not message.strip():
+            errors.append("Message cannot be empty")
+        
+        if len(message) > 250:
+            errors.append("Message cannot exceed 250 characters")
+        
+        # Check for harmful patterns
+        if re.search(r'<script', message, re.IGNORECASE):
+            errors.append("Message contains prohibited <script> tag")
+        
+        if re.search(r'<img[^>]*on\w+\s*=', message, re.IGNORECASE):
+            errors.append("Message contains suspicious <img> attributes")
+        
+        # Check for SQL injection keywords
+        sql_keywords = ['SELECT', 'DROP', 'INSERT', 'DELETE', 'UPDATE', 'UNION', 'WHERE']
+        for keyword in sql_keywords:
+            if re.search(r'\b' + keyword + r'\b', message, re.IGNORECASE):
+                errors.append(f"Message contains prohibited SQL keyword: {keyword}")
+                break
+        
+        return len(errors) == 0, errors
+    
+    @staticmethod
+    def sanitize_input(text, field_type):
+        """
+        Sanitizes input by removing or neutralizing dangerous elements.
+        Returns: (sanitized_text, was_sanitized, sanitization_notes)
+        """
+        original = text
+        notes = []
+        
+        # Remove HTML tags
+        if re.search(r'<[^>]+>', text):
+            text = re.sub(r'<[^>]+>', '', text)
+            notes.append("HTML tags removed")
+        
+        # Remove script content
+        if re.search(r'<script.*?</script>', text, re.IGNORECASE | re.DOTALL):
+            text = re.sub(r'<script.*?</script>', '', text, flags=re.IGNORECASE | re.DOTALL)
+            notes.append("Script tags removed")
+        
+        # Remove SQL injection keywords and patterns
+        sql_keywords = ['SELECT', 'DROP', 'INSERT', 'DELETE', 'UPDATE', 'UNION', 'WHERE', 'FROM', 'TABLE']
+        for keyword in sql_keywords:
+            if re.search(r'\b' + keyword + r'\b', text, re.IGNORECASE):
+                text = re.sub(r'\b' + keyword + r'\b', '', text, flags=re.IGNORECASE)
+                notes.append(f"SQL keyword '{keyword}' removed")
+        
+        # Remove SQL special characters and patterns
+        sql_chars = [';', '--', '/*', '*/', '1=1', "' OR '", '" OR "']
+        for char in sql_chars:
+            if char in text:
+                text = text.replace(char, '')
+                if "SQL" not in ' '.join(notes):
+                    notes.append("SQL injection patterns neutralized")
+        
+        # Remove quotes used in SQL injection
+        if re.search(r"['\"]", text):
+            text = re.sub(r"['\"]", '', text)
+            if "SQL" not in ' '.join(notes):
+                notes.append("Potentially dangerous quotes removed")
+        
+        # Field-specific sanitization
+        if field_type == 'name':
+            # Remove any characters that aren't letters, spaces, hyphens, or apostrophes
+            text = re.sub(r'[^a-zA-Z\s\'-]', '', text)
+            if text != original and "Invalid characters" not in ' '.join(notes):
+                notes.append("Invalid characters removed from name")
+        
+        elif field_type == 'username':
+            # Remove any characters that aren't letters, numbers, or underscores
+            text = re.sub(r'[^a-zA-Z0-9_]', '', text)
+            if text != original and "Invalid characters" not in ' '.join(notes):
+                notes.append("Invalid characters removed from username")
+        
+        elif field_type == 'email':
+            # Remove spaces
+            text = text.replace(' ', '')
+            if text != original and "Spaces" not in ' '.join(notes):
+                notes.append("Spaces removed from email")
+        
+        # Clean up extra whitespace
+        text = re.sub(r'\s+', ' ', text).strip()
+        
+        was_sanitized = len(notes) > 0
+        return text, was_sanitized, notes
+    
+    @staticmethod
     def validate_email(value):
         errors = []
         warnings = []
@@ -678,4 +844,4 @@ class WebSecurityTool:
             tk.Label(header_frame, text="✗", font=("Arial", 14), 
                     bg="#7f1d1d", fg="#ef4444").pack(side=tk.LEFT, padx=(0, 10))
             tk.Label(header_frame, text="Validation Errors", font=("Arial", 12, "bold"), 
-                    bg
+                    bg="#7f1d1d", fg="#ef4444").pack(anchor=tk.W)
