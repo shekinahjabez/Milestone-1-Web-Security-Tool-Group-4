@@ -1,5 +1,6 @@
 import re
-from utils import COMMON_PASSWORDS, DICTIONARY_WORDS
+from .utils import COMMON_PASSWORDS, DICTIONARY_WORDS, SQL_KEYWORDS
+
 
 def evaluate_password(password):
     # Line 10 should be here or inside this function

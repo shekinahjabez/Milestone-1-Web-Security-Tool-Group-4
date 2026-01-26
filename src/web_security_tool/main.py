@@ -1,15 +1,10 @@
 import customtkinter as ctk
-import random
-import string
-import hashlib
-import html
 import re
-from datetime import datetime
 
-# 1. Import your custom logic
-from password_assessor import evaluate_password
-from password_generator import process_generation
-from input_validator import InputValidator
+from .password_assessor import evaluate_password
+from .password_generator import process_generation
+from .input_validator import InputValidator
+
 
 # --- Styling Constants ---
 COLORS = {
@@ -38,7 +33,7 @@ class WebSecurityTool(ctk.CTk):
         header = ctk.CTkFrame(self, fg_color="transparent")
         header.pack(pady=(30, 15))
         ctk.CTkLabel(header, text="🛡️ Web Security Tool", font=("Inter", 32, "bold"), text_color="white").pack()
-        ctk.CTkLabel(header, text="MO-IT142 Security Script Programming", font=("Inter", 14), text_color="white").pack()
+    
         
         self.nav_frame = ctk.CTkFrame(self, fg_color=COLORS["bg_card"], corner_radius=12, border_width=1, border_color=COLORS["border"])
         self.nav_frame.pack(padx=50, fill="x", pady=10)
@@ -286,7 +281,8 @@ class WebSecurityTool(ctk.CTk):
         name_valid, name_errors = InputValidator.validate_full_name(sanitized_name)
         email_valid, email_errors = InputValidator.validate_email_simple(sanitized_email)
         username_valid, username_errors = InputValidator.validate_username(sanitized_username)
-        message_valid, message_errors = InputValidator.validate_message(sanitized_message)
+        message_valid, message_errors = InputValidator.validate_message(message)
+
         
         # Build results output
         output = "=" * 60 + "\n"
