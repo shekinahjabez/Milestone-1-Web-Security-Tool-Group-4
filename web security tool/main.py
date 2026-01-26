@@ -4,6 +4,7 @@ import re
 import random
 import string
 import hashlib
+from password_assessor import Password_Assessor
 
 class ModernButton(tk.Canvas):
     def __init__(self, parent, text, command, bg_color, fg_color="white", **kwargs):
@@ -184,7 +185,7 @@ class WebSecurityTool:
         self.pwd_result_frame = tk.Frame(content, bg="#1e2139")
         self.pwd_result_frame.pack(fill=tk.BOTH, expand=True)
     
-    def check_password_strength(self):
+    """def check_password_strength(self):
         for widget in self.pwd_result_frame.winfo_children():
             widget.destroy()
         
@@ -236,7 +237,29 @@ class WebSecurityTool:
             strength = "Weak"
             color = "#ef4444"
             bar_color = "#ef4444"
+        """
+    def check_password_strength(self):
+        # 1. Clear UI
+        for widget in self.pwd_result_frame.winfo_children():
+            widget.destroy()
         
+        password = self.pwd_entry.get()
+        if not password:
+            return
+        
+        # 2. Redirect to external assessor
+        # This calls the function in password_assessor.py
+        strength, feedback_text = Password_Assessor.evaluate_password(password)
+        
+        # 3. Handle UI Logic based on results
+        color_map = {
+            "Strong": "#10b981",
+            "Moderate": "#f59e0b",
+            "Weak": "#ef4444"
+        }
+        color = color_map.get(strength, "#ef4444")
+        
+        # Create the result display frame (keeping your existing UI style)
         result_frame = tk.Frame(self.pwd_result_frame, bg="#2d3250")
         result_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         
@@ -250,21 +273,17 @@ class WebSecurityTool:
                 bg="#2d3250", fg="white").pack(side=tk.LEFT)
         tk.Label(strength_frame, text=strength, font=("Arial", 18, "bold"), 
                 bg="#2d3250", fg=color).pack(side=tk.RIGHT)
-        
-        progress_frame = tk.Frame(inner, bg="#475569", height=12)
-        progress_frame.pack(fill=tk.X, pady=(0, 20))
-        progress_frame.pack_propagate(False)
-        
-        progress_fill = tk.Frame(progress_frame, bg=bar_color, height=12)
-        progress_fill.place(relwidth=score/6, relheight=1)
-        
-        if feedback:
+
+        # Handle feedback suggestions
+        if feedback_text and strength != "Strong":
             tk.Label(inner, text="Suggestions:", font=("Arial", 12, "bold"), 
                     bg="#2d3250", fg="white").pack(anchor=tk.W, pady=(10, 8))
             
-            for tip in feedback:
-                tk.Label(inner, text=f"• {tip}", font=("Arial", 10), 
-                        bg="#2d3250", fg="#94a3b8").pack(anchor=tk.W, padx=(15, 0), pady=2)
+            # Split the newline-separated string into individual bullet points
+            for tip in feedback_text.split('\n'):
+                if tip.strip():
+                    tk.Label(inner, text=f"• {tip}", font=("Arial", 10), 
+                            bg="#2d3250", fg="#94a3b8").pack(anchor=tk.W, padx=(15, 0), pady=2)
     
     def show_password_generator(self):
         content = tk.Frame(self.content_frame, bg="#1e2139")
