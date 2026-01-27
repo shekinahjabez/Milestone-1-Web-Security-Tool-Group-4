@@ -1,591 +1,364 @@
-import tkinter as tk
-from tkinter import ttk, messagebox
-import re
+import customtkinter as ctk
 import random
 import string
 import hashlib
 from password_assessor import Password_Assessor
+import html
+import re
+from datetime import datetime
 
-class ModernButton(tk.Canvas):
-    def __init__(self, parent, text, command, bg_color, fg_color="white", **kwargs):
-        super().__init__(parent, highlightthickness=0, **kwargs)
-        self.command = command
-        self.bg_color = bg_color
-        self.fg_color = fg_color
-        self.text = text
-        self.is_selected = False
-        
-        self.configure(bg=bg_color, height=45)
-        self.bind("<Button-1>", lambda e: self.on_click())
-        self.bind("<Enter>", lambda e: self.on_hover())
-        self.bind("<Leave>", lambda e: self.on_leave())
-        
-        self.draw()
-    
-    def draw(self):
-        self.delete("all")
-        width = self.winfo_width() if self.winfo_width() > 1 else 200
-        height = 45
-        
-        # Draw rounded rectangle
-        radius = 8
-        self.create_oval(0, 0, radius*2, radius*2, fill=self.bg_color, outline="")
-        self.create_oval(width-radius*2, 0, width, radius*2, fill=self.bg_color, outline="")
-        self.create_oval(0, height-radius*2, radius*2, height, fill=self.bg_color, outline="")
-        self.create_oval(width-radius*2, height-radius*2, width, height, fill=self.bg_color, outline="")
-        self.create_rectangle(radius, 0, width-radius, height, fill=self.bg_color, outline="")
-        self.create_rectangle(0, radius, width, height-radius, fill=self.bg_color, outline="")
-        
-        # Draw text
-        self.create_text(width//2, height//2, text=self.text, fill=self.fg_color, 
-                        font=("Arial", 11, "bold"))
-    
-    def on_click(self):
-        if self.command:
-            self.command()
-    
-    def on_hover(self):
-        if not self.is_selected:
-            self.configure(bg=self.adjust_color(self.bg_color, 1.1))
-    
-    def on_leave(self):
-        if not self.is_selected:
-            self.configure(bg=self.bg_color)
-    
-    def adjust_color(self, color, factor):
-        # Simple color adjustment
-        return color
+# 1. Import your custom logic
+# from password_assessor import evaluate_password
+from password_generator import process_generation
+from input_validator import InputValidator
 
-class WebSecurityTool:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Web Security Tool")
-        self.root.geometry("1000x750")
-        self.root.configure(bg="#0a0e27")
+# --- Styling Constants ---
+COLORS = {
+    "bg_dark": "#0f172a",
+    "bg_card": "#1e293b",
+    "accent": "#06b6d4",
+    "text_main": "#ffffff",
+    "text_dim": "#94a3b8",
+    "border": "#334155",
+    "success": "#10b981",
+    "warning": "#f59e0b",
+    "danger": "#ef4444",
+}
+
+class WebSecurityTool(ctk.CTk):
+    def __init__(self):
+        super().__init__()
+        self.title("Web Security Tool - MS1")
+        self.geometry("1000x950")
+        self.configure(fg_color=COLORS["bg_dark"])
         
-        # Main container with gradient-like background
-        self.main_container = tk.Frame(self.root, bg="#0a0e27")
-        self.main_container.pack(fill=tk.BOTH, expand=True)
+        self.show_password = False
+        self.setup_ui()
+
+    def setup_ui(self):
+        header = ctk.CTkFrame(self, fg_color="transparent")
+        header.pack(pady=(30, 15))
+        ctk.CTkLabel(header, text="🛡️ Web Security Tool", font=("Inter", 32, "bold"), text_color="white").pack()
+        ctk.CTkLabel(header, text="MO-IT142 Security Script Programming", font=("Inter", 14), text_color="white").pack()
         
-        # Header
-        self.create_header()
+        self.nav_frame = ctk.CTkFrame(self, fg_color=COLORS["bg_card"], corner_radius=12, border_width=1, border_color=COLORS["border"])
+        self.nav_frame.pack(padx=50, fill="x", pady=10)
         
-        # Tab buttons
-        self.create_tab_buttons()
-        
-        # Content area
-        self.content_frame = tk.Frame(self.main_container, bg="#1e2139", relief=tk.FLAT)
-        self.content_frame.pack(fill=tk.BOTH, expand=True, padx=40, pady=(20, 40))
-        
-        # Show default tab
-        self.current_tab = "validator"
-        self.show_input_validator()
-        
-    def create_header(self):
-        header_frame = tk.Frame(self.main_container, bg="#0a0e27")
-        header_frame.pack(fill=tk.X, pady=(30, 20))
-        
-        # Shield icon (using text emoji)
-        icon_label = tk.Label(header_frame, text="🛡️", font=("Arial", 48), 
-                             bg="#0a0e27", fg="#22d3ee")
-        icon_label.pack()
-        
-        title = tk.Label(header_frame, text="Web Security Tool", 
-                        font=("Arial", 36, "bold"), bg="#0a0e27", fg="white")
-        title.pack(pady=(10, 5))
-        
-        subtitle = tk.Label(header_frame, 
-                           text="Professional security utilities for password management and input validation",
-                           font=("Arial", 12), bg="#0a0e27", fg="#94a3b8")
-        subtitle.pack()
-    
-    def create_tab_buttons(self):
-        tab_frame = tk.Frame(self.main_container, bg="#0a0e27")
-        tab_frame.pack(pady=20)
-        
-        button_container = tk.Frame(tab_frame, bg="#0a0e27")
-        button_container.pack()
-        
-        # Password Strength button
-        self.strength_btn = tk.Button(button_container, text="🛡️  Password Strength",
-                                      command=lambda: self.switch_tab("strength"),
-                                      bg="#1e293b", fg="#94a3b8", font=("Arial", 11, "bold"),
-                                      relief=tk.FLAT, cursor="hand2", padx=25, pady=12,
-                                      activebackground="#334155", activeforeground="white")
-        self.strength_btn.pack(side=tk.LEFT, padx=5)
-        
-        # Password Generator button
-        self.generator_btn = tk.Button(button_container, text="🔑  Password Generator",
-                                       command=lambda: self.switch_tab("generator"),
-                                       bg="#1e293b", fg="#94a3b8", font=("Arial", 11, "bold"),
-                                       relief=tk.FLAT, cursor="hand2", padx=25, pady=12,
-                                       activebackground="#334155", activeforeground="white")
-        self.generator_btn.pack(side=tk.LEFT, padx=5)
-        
-        # Input Validator button
-        self.validator_btn = tk.Button(button_container, text="📋  Input Validator",
-                                       command=lambda: self.switch_tab("validator"),
-                                       bg="#06b6d4", fg="white", font=("Arial", 11, "bold"),
-                                       relief=tk.FLAT, cursor="hand2", padx=25, pady=12,
-                                       activebackground="#0891b2", activeforeground="white")
-        self.validator_btn.pack(side=tk.LEFT, padx=5)
-        
-        self.tab_buttons = {
-            "strength": self.strength_btn,
-            "generator": self.generator_btn,
-            "validator": self.validator_btn
-        }
-    
-    def switch_tab(self, tab_name):
+        self.tabs = {}
+        for text, key in [("Strength Assessor", "strength"), ("Hash Generator", "generator"), ("Input Validator", "validator")]:
+            btn = ctk.CTkButton(self.nav_frame, text=text, fg_color="transparent", text_color=COLORS["text_dim"], 
+                               font=("Inter", 13, "bold"), hover_color=COLORS["border"],
+                               command=lambda k=key: self.switch_tab(k))
+            btn.pack(side="left", expand=True, padx=5, pady=8)
+            self.tabs[key] = btn
+
+        self.container = ctk.CTkFrame(self, fg_color=COLORS["bg_card"], corner_radius=16, border_width=1, border_color=COLORS["border"])
+        self.container.pack(padx=50, pady=20, fill="both", expand=True)
+        self.switch_tab("strength")
+
+    def switch_tab(self, key):
         # Update button colors
-        for name, btn in self.tab_buttons.items():
-            if name == tab_name:
-                btn.configure(bg="#06b6d4", fg="white")
-            else:
-                btn.configure(bg="#1e293b", fg="#94a3b8")
+        for k, btn in self.tabs.items():
+            btn.configure(
+                fg_color=COLORS["accent"] if k == key else "transparent", 
+                text_color="white" if k == key else COLORS["text_dim"]
+            )
         
-        # Clear content frame
-        for widget in self.content_frame.winfo_children():
-            widget.destroy()
+        # HIDE all existing frames instead of destroying them
+        for widget in self.container.winfo_children(): 
+            widget.pack_forget() 
         
-        # Show selected tab
-        self.current_tab = tab_name
-        if tab_name == "strength":
-            self.show_password_strength()
-        elif tab_name == "generator":
-            self.show_password_generator()
-        elif tab_name == "validator":
-            self.show_input_validator()
-    
-    def show_password_strength(self):
-        content = tk.Frame(self.content_frame, bg="#1e2139")
-        content.pack(fill=tk.BOTH, expand=True, padx=40, pady=40)
-        
-        tk.Label(content, text="Password Strength Checker", 
-                font=("Arial", 20, "bold"), bg="#1e2139", fg="white").pack(anchor=tk.W)
-        
-        tk.Label(content, text="Analyze your password security", 
-                font=("Arial", 11), bg="#1e2139", fg="#94a3b8").pack(anchor=tk.W, pady=(5, 25))
-        
-        tk.Label(content, text="Enter password to check:", 
-                font=("Arial", 10), bg="#1e2139", fg="#94a3b8").pack(anchor=tk.W, pady=(0, 8))
-        
-        self.pwd_entry = tk.Entry(content, font=("Arial", 12), bg="#2d3250", fg="white", 
-                                  insertbackground="white", relief=tk.FLAT, show="*",
-                                  borderwidth=0, highlightthickness=0)
-        self.pwd_entry.pack(fill=tk.X, ipady=12, pady=(0, 20))
-        
-        check_btn = tk.Button(content, text="Check Password Strength", 
-                             command=self.check_password_strength,
-                             bg="#06b6d4", fg="white", font=("Arial", 12, "bold"),
-                             relief=tk.FLAT, cursor="hand2", padx=30, pady=15,
-                             borderwidth=0, activebackground="#0891b2")
-        check_btn.pack(fill=tk.X, pady=(0, 25))
-        
-        self.pwd_result_frame = tk.Frame(content, bg="#1e2139")
-        self.pwd_result_frame.pack(fill=tk.BOTH, expand=True)
-    
-    """def check_password_strength(self):
-        for widget in self.pwd_result_frame.winfo_children():
-            widget.destroy()
-        
-        password = self.pwd_entry.get()
-        
-        if not password:
-            return
-        
-        score = 0
-        feedback = []
-        
-        if len(password) >= 8:
-            score += 1
-        else:
-            feedback.append("Password should be at least 8 characters")
-        
-        if len(password) >= 12:
-            score += 1
-        
-        if re.search(r'[a-z]', password):
-            score += 1
-        else:
-            feedback.append("Add lowercase letters")
-        
-        if re.search(r'[A-Z]', password):
-            score += 1
-        else:
-            feedback.append("Add uppercase letters")
-        
-        if re.search(r'[0-9]', password):
-            score += 1
-        else:
-            feedback.append("Add numbers")
-        
-        if re.search(r'[^a-zA-Z0-9]', password):
-            score += 1
-        else:
-            feedback.append("Add special characters")
-        
-        if score >= 5:
-            strength = "Strong"
-            color = "#10b981"
-            bar_color = "#10b981"
-        elif score >= 3:
-            strength = "Medium"
-            color = "#f59e0b"
-            bar_color = "#f59e0b"
-        else:
-            strength = "Weak"
-            color = "#ef4444"
-            bar_color = "#ef4444"
-        """
-    def check_password_strength(self):
-        # 1. Clear UI
-        for widget in self.pwd_result_frame.winfo_children():
-            widget.destroy()
-        
-        password = self.pwd_entry.get()
-        if not password:
-            return
-        
-        # 2. Redirect to external assessor
-        # This calls the function in password_assessor.py
-        strength, feedback_text = Password_Assessor.evaluate_password(password)
-        
-        # 3. Handle UI Logic based on results
-        color_map = {
-            "Strong": "#10b981",
-            "Moderate": "#f59e0b",
-            "Weak": "#ef4444"
-        }
-        color = color_map.get(strength, "#ef4444")
-        
-        # Create the result display frame (keeping your existing UI style)
-        result_frame = tk.Frame(self.pwd_result_frame, bg="#2d3250")
-        result_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-        
-        inner = tk.Frame(result_frame, bg="#2d3250")
-        inner.pack(fill=tk.BOTH, expand=True, padx=25, pady=25)
-        
-        strength_frame = tk.Frame(inner, bg="#2d3250")
-        strength_frame.pack(fill=tk.X, pady=(0, 20))
-        
-        tk.Label(strength_frame, text="Strength:", font=("Arial", 13), 
-                bg="#2d3250", fg="white").pack(side=tk.LEFT)
-        tk.Label(strength_frame, text=strength, font=("Arial", 18, "bold"), 
-                bg="#2d3250", fg=color).pack(side=tk.RIGHT)
+        # Check if the frame for this tab already exists, if not, create it once
+        if not hasattr(self, 'frames'):
+            self.frames = {}
 
-        # Handle feedback suggestions
-        if feedback_text and strength != "Strong":
-            tk.Label(inner, text="Suggestions:", font=("Arial", 12, "bold"), 
-                    bg="#2d3250", fg="white").pack(anchor=tk.W, pady=(10, 8))
-            
-            # Split the newline-separated string into individual bullet points
-            for tip in feedback_text.split('\n'):
-                if tip.strip():
-                    tk.Label(inner, text=f"• {tip}", font=("Arial", 10), 
-                            bg="#2d3250", fg="#94a3b8").pack(anchor=tk.W, padx=(15, 0), pady=2)
-    
-    def show_password_generator(self):
-        content = tk.Frame(self.content_frame, bg="#1e2139")
-        content.pack(fill=tk.BOTH, expand=True, padx=40, pady=40)
+        if key not in self.frames:
+            if key == "strength":
+                self.frames[key] = self.create_strength_frame()
+            elif key == "generator":
+                self.frames[key] = self.create_generator_frame()
+            elif key == "validator":
+                self.frames[key] = self.create_validator_frame()
         
-        tk.Label(content, text="Password Generator", 
-                font=("Arial", 20, "bold"), bg="#1e2139", fg="white").pack(anchor=tk.W)
+        # Show the frame
+        self.frames[key].pack(fill="both", expand=True)
+
+    def create_strength_frame(self):
+        scroll_frame = ctk.CTkScrollableFrame(self.container, fg_color="transparent")
+        scroll_frame.pack(padx=10, pady=10, fill="both", expand=True)
+
+        ctk.CTkLabel(scroll_frame, text="Password Strength Assessor", font=("Inter", 24, "bold"), text_color="white").pack(anchor="w", padx=40, pady=(20, 0))
         
-        tk.Label(content, text="Generate secure random passwords", 
-                font=("Arial", 11), bg="#1e2139", fg="#94a3b8").pack(anchor=tk.W, pady=(5, 25))
+        input_container = ctk.CTkFrame(scroll_frame, fg_color=COLORS["bg_dark"], corner_radius=10, border_width=1, border_color=COLORS["border"])
+        input_container.pack(fill="x", padx=40, pady=20)
+
+        self.strength_entry = ctk.CTkEntry(input_container, placeholder_text="Type your password here...", 
+                                         height=55, border_width=0, fg_color="transparent",     text_color="white",            
+    placeholder_text_color="#AAAAAA",
+    show="*")
+        self.strength_entry.pack(side="left", fill="x", expand=True, padx=15)
         
-        gen_btn = tk.Button(content, text="Generate Secure Password", 
-                           command=self.generate_password,
-                           bg="#06b6d4", fg="white", font=("Arial", 12, "bold"),
-                           relief=tk.FLAT, cursor="hand2", padx=30, pady=15,
-                           borderwidth=0, activebackground="#0891b2")
-        gen_btn.pack(fill=tk.X, pady=(0, 25))
-        
-        self.gen_result_frame = tk.Frame(content, bg="#1e2139")
-        self.gen_result_frame.pack(fill=tk.BOTH, expand=True)
-    
-    def generate_password(self):
-        for widget in self.gen_result_frame.winfo_children():
+        self.toggle_eye = ctk.CTkButton(input_container, text="👁️", width=45, height=45, fg_color="transparent",text_color="white",     
+    hover_color=COLORS["bg_dark"], command=self.toggle_pwd_view)
+        self.toggle_eye.pack(side="right", padx=5)
+
+        ctk.CTkButton(scroll_frame, text="Check Password Strength", fg_color=COLORS["accent"], height=50, 
+                     font=("Inter", 14, "bold"), command=self.handle_check_password).pack(fill="x", padx=40, pady=10)
+
+        self.results_area = ctk.CTkFrame(scroll_frame, fg_color="transparent")
+        self.results_area.pack(fill="x", padx=40, pady=(10, 40))
+
+        self.render_waiting_state()
+
+        return scroll_frame
+
+    def render_waiting_state(self):
+        self.waiting_frame = ctk.CTkFrame(self.results_area, fg_color="transparent")
+        self.waiting_frame.pack(pady=50)
+        ctk.CTkLabel(self.waiting_frame, text="🔍", font=("Inter", 48)).pack()
+        ctk.CTkLabel(self.waiting_frame, text="Enter a password above and click \"Check Password Strength\"\nto see its assessment", 
+                    text_color=COLORS["text_dim"], justify="center").pack(pady=10)
+
+    def handle_check_password(self):
+        pwd = self.strength_entry.get()
+        for widget in self.results_area.winfo_children(): 
             widget.destroy()
+
+        if not pwd.strip():
+            self.render_waiting_state()
+            err_frame = ctk.CTkFrame(self.results_area, fg_color="#2d1f21", border_width=1, border_color=COLORS["danger"])
+            err_frame.pack(fill="x", pady=10)
+            ctk.CTkLabel(err_frame, text="⚠️ Please enter a password before checking.", text_color=COLORS["danger"]).pack(pady=10)
+            return
+
+        # Call External Logic
+        rating, feedback = evaluate_password(pwd)
+
+        # Mapping for UI
+        if rating == "Weak": color, pct = COLORS["danger"], 0.25
+        elif rating == "Moderate": color, pct = COLORS["warning"], 0.6
+        else: color, pct = COLORS["success"], 1.0
+
+        self.display_results(pwd, rating, feedback, color, pct)
+
+    def display_results(self, pwd, rating, feedback, color, pct):
+        # 1. Strength Bar Card
+        card = ctk.CTkFrame(self.results_area, fg_color=COLORS["bg_card"], border_width=1, border_color=COLORS["border"])
+        card.pack(fill="x", pady=5)
         
-        length = 16
-        charset = string.ascii_letters + string.digits + "!@#$%^&*()_+-=[]{}|;:,.<>?"
-        password = ''.join(random.choice(charset) for _ in range(length))
+        row = ctk.CTkFrame(card, fg_color="transparent")
+        row.pack(fill="x", padx=20, pady=(15, 5))
+        ctk.CTkLabel(row, text="Security Rating:", text_color="white").pack(side="left")
+        ctk.CTkLabel(row, text=rating, font=("Inter", 18, "bold"), text_color=color).pack(side="right")
         
-        hash_obj = hashlib.sha256(password.encode())
-        hash_hex = hash_obj.hexdigest()
-        
-        result_frame = tk.Frame(self.gen_result_frame, bg="#2d3250")
-        result_frame.pack(fill=tk.X, padx=5, pady=5)
-        
-        inner = tk.Frame(result_frame, bg="#2d3250")
-        inner.pack(fill=tk.BOTH, padx=25, pady=25)
-        
-        tk.Label(inner, text="Generated Password:", 
-                font=("Arial", 10), bg="#2d3250", fg="#94a3b8").pack(anchor=tk.W, pady=(0, 8))
-        
-        pwd_frame = tk.Frame(inner, bg="#2d3250")
-        pwd_frame.pack(fill=tk.X, pady=(0, 20))
-        
-        pwd_display = tk.Frame(pwd_frame, bg="#1a1d2e")
-        pwd_display.pack(fill=tk.X)
-        
-        pwd_label = tk.Label(pwd_display, text=password, font=("Courier", 16, "bold"), 
-                            bg="#1a1d2e", fg="#06b6d4", anchor=tk.W)
-        pwd_label.pack(side=tk.LEFT, padx=15, pady=15, fill=tk.X, expand=True)
-        
-        copy_btn = tk.Button(pwd_display, text="Copy", 
-                            command=lambda: self.copy_to_clipboard(password),
-                            bg="#06b6d4", fg="white", font=("Arial", 10, "bold"), 
-                            relief=tk.FLAT, cursor="hand2", padx=20, pady=8,
-                            borderwidth=0)
-        copy_btn.pack(side=tk.RIGHT, padx=15, pady=15)
-        
-        tk.Label(inner, text="SHA-256 Hash:", 
-                font=("Arial", 10), bg="#2d3250", fg="#94a3b8").pack(anchor=tk.W, pady=(10, 8))
-        
-        hash_display = tk.Frame(inner, bg="#1a1d2e")
-        hash_display.pack(fill=tk.X)
-        
-        tk.Label(hash_display, text=hash_hex, font=("Courier", 9), 
-                bg="#1a1d2e", fg="#94a3b8", wraplength=700, anchor=tk.W).pack(padx=15, pady=15)
-    
-    def show_input_validator(self):
-        content = tk.Frame(self.content_frame, bg="#1e2139")
-        content.pack(fill=tk.BOTH, expand=True, padx=40, pady=40)
-        
-        tk.Label(content, text="Input Validator & Sanitizer", 
-                font=("Arial", 20, "bold"), bg="#1e2139", fg="white").pack(anchor=tk.W)
-        
-        tk.Label(content, text="Validate and sanitize user input to prevent security vulnerabilities", 
-                font=("Arial", 11), bg="#1e2139", fg="#94a3b8").pack(anchor=tk.W, pady=(5, 25))
-        
-        # Validation Type
-        tk.Label(content, text="Validation Type", 
-                font=("Arial", 10), bg="#1e2139", fg="#94a3b8").pack(anchor=tk.W, pady=(0, 10))
-        
-        type_frame = tk.Frame(content, bg="#1e2139")
-        type_frame.pack(fill=tk.X, pady=(0, 25))
-        
-        self.validation_type = tk.StringVar(value="email")
-        self.type_buttons = {}
-        
-        types = [
-            ("Email Address", "email"),
-            ("URL/Website", "url"),
-            ("Phone Number", "phone"),
-            ("Alphanumeric", "alphanumeric"),
-            ("Text/HTML", "text"),
-            ("SQL Input", "sql")
+        bar = ctk.CTkProgressBar(card, height=12, progress_color=color)
+        bar.pack(fill="x", padx=20, pady=(0, 20))
+        bar.set(pct)
+
+        # 2. Security Criteria Checklist (The missing part)
+        criteria_frame = ctk.CTkFrame(self.results_area, fg_color=COLORS["bg_card"], border_width=1, border_color=COLORS["border"])
+        criteria_frame.pack(fill="x", pady=5)
+        ctk.CTkLabel(criteria_frame, text="Security Criteria Assessment", font=("Inter", 14, "bold"), text_color="white").pack(anchor="w", padx=20, pady=10)
+
+        # We manually verify these for the UI checklist display
+        checks = [
+            (len(pwd) >= 12, "At least 12 characters"),
+            (bool(re.search(r"[A-Z]", pwd)), "Contains uppercase letters"),
+            (bool(re.search(r"[a-z]", pwd)), "Contains lowercase letters"),
+            (bool(re.search(r"[0-9]", pwd)), "Contains numbers"),
+            (bool(re.search(r"[!@#$%^&*()_+=\-[\]{};:'\",.<>?/\\|]", pwd)), "Contains special symbols"),
         ]
+
+        for met, text in checks:
+            icon = "✅" if met else "❌"
+            t_color = COLORS["success"] if met else COLORS["danger"]
+            ctk.CTkLabel(criteria_frame, text=f"{icon}  {text}", text_color=t_color).pack(anchor="w", padx=40, pady=2)
+
+        # 3. Recommendations Card
+        feedback_card = ctk.CTkFrame(self.results_area, fg_color=COLORS["bg_card"], border_width=1, border_color=COLORS["border"])
+        feedback_card.pack(fill="x", pady=5)
+        ctk.CTkLabel(feedback_card, text="Recommendations", font=("Inter", 14, "bold"), text_color="white").pack(anchor="w", padx=20, pady=10)
+        ctk.CTkLabel(feedback_card, text=feedback, text_color="white", justify="left", wraplength=800).pack(anchor="w", padx=40, pady=(0, 20))
+
+    def toggle_pwd_view(self):
+        self.show_password = not self.show_password
+        self.strength_entry.configure(show="" if self.show_password else "*")
+        self.toggle_eye.configure(text="🔒" if self.show_password else "👁️")
+
+    # (Other tabs like generator and validator remain unchanged)
+    def create_generator_frame(self):
+        # Create a parent frame for this tab
+        parent_frame = ctk.CTkFrame(self.container, fg_color="transparent")
         
-        for i, (label, value) in enumerate(types):
-            row = i // 3
-            col = i % 3
+        ctk.CTkLabel(parent_frame, text="Secure Password Generator", font=("Inter", 24, "bold"), text_color="white").pack(anchor="w", padx=40, pady=(20, 0))
+        ctk.CTkLabel(parent_frame, text="Generate cryptographically secure passwords with SHA-256 hashing", 
+                     text_color="white").pack(anchor="w", padx=40)
+        
+        # Slider Section
+        slider_container = ctk.CTkFrame(parent_frame, fg_color=COLORS["bg_dark"], corner_radius=10)
+        slider_container.pack(fill="x", padx=40, pady=20)
+        
+        self.len_label = ctk.CTkLabel(slider_container, text="Password Length: 16", font=("Inter", 13, "bold"), text_color="white")
+        self.len_label.pack(pady=(10, 0))
+        
+        # CORRECTED SLIDER: from_ and to
+        self.length_slider = ctk.CTkSlider(slider_container, from_=8, to=16, number_of_steps=8,
+                                          command=lambda v: self.len_label.configure(text=f"Password Length: {int(v)}"))
+        self.length_slider.set(16)
+        self.length_slider.pack(fill="x", padx=20, pady=20)
+
+        ctk.CTkButton(parent_frame, text="Generate Secure Password", fg_color=COLORS["accent"], height=50, 
+                     font=("Inter", 14, "bold"), command=self.process_gen).pack(padx=40, fill="x")
+
+        # Result area
+        self.gen_res_area = ctk.CTkScrollableFrame(parent_frame, fg_color="transparent", height=400)
+        self.gen_res_area.pack(fill="both", expand=True, padx=40, pady=20)
+        
+        return parent_frame # Crucial for the switch_tab logic
+
+    def process_gen(self):
+        try:
+            # 1. Get value safely
+            val = self.length_slider.get()
+            length = int(val)
             
-            btn = tk.Button(type_frame, text=label, 
-                           command=lambda v=value: self.select_validation_type(v),
-                           bg="#06b6d4" if value == "email" else "#2d3250",
-                           fg="white" if value == "email" else "#94a3b8",
-                           font=("Arial", 10, "bold"),
-                           relief=tk.FLAT, cursor="hand2", padx=20, pady=12,
-                           borderwidth=0,
-                           activebackground="#0891b2" if value == "email" else "#3d4268")
-            btn.grid(row=row, column=col, sticky="ew", padx=5, pady=5)
-            self.type_buttons[value] = btn
+            # 2. Call your logic - now returns bcrypt hash too
+            pwd, hsh, bcrypt_hash, ts = process_generation(length)
+            
+            # 3. ONLY clear the result area, NOT the slider
+            for widget in self.gen_res_area.winfo_children():
+                widget.destroy()
+                
+            # 4. Display results
+            ctk.CTkLabel(self.gen_res_area, text=f"Generated at: {ts}", text_color="white").pack(anchor="w")
+            
+            p_box = ctk.CTkTextbox(self.gen_res_area, height=70, fg_color=COLORS["bg_dark"], text_color="#ffffff")
+            p_box.pack(fill="x", pady=5)
+            p_box.insert("1.0", f"PASSWORD: {pwd}")
+            
+            h_box = ctk.CTkTextbox(self.gen_res_area, height=70, fg_color=COLORS["bg_dark"], text_color="#4ade80")
+            h_box.pack(fill="x", pady=5)
+            h_box.insert("1.0", f"SHA-256 HASH: {hsh}")
+            
+            # Add bcrypt hash display
+            bcrypt_box = ctk.CTkTextbox(self.gen_res_area, height=90, fg_color=COLORS["bg_dark"], text_color="#f59e0b")
+            bcrypt_box.pack(fill="x", pady=5)
+            bcrypt_box.insert("1.0", f"BCRYPT HASH: {bcrypt_hash}")
+
+        except Exception as e:
+            print(f"UI Update Error: {e}")
+
+    def create_validator_frame(self):
+        scroll_frame = ctk.CTkScrollableFrame(self.container, fg_color="transparent")
+        scroll_frame.pack(padx=10, pady=10, fill="both", expand=True)
+        ctk.CTkLabel(scroll_frame, text="Web Form Input Validator", font=("Inter", 24, "bold"), text_color="white").pack(anchor="w", padx=40, pady=(10,20))
+        self.val_inputs = {}
+        for field in ["Full Name", "Email Address", "Username", "Message"]:
+            ctk.CTkLabel(scroll_frame, text=field, text_color="white").pack(anchor="w", padx=40)
+            e = ctk.CTkEntry(scroll_frame, height=45, fg_color=COLORS["bg_dark"], border_color=COLORS["border"], text_color="white")
+            e.pack(fill="x", padx=40, pady=(5, 15))
+            self.val_inputs[field] = e
+        ctk.CTkButton(scroll_frame, text="Validate & Sanitize", fg_color=COLORS["accent"], height=45, command=self.do_val).pack(fill="x", padx=40, pady=10)
+        self.val_res = ctk.CTkTextbox(scroll_frame, height=200, fg_color=COLORS["bg_dark"], border_color=COLORS["border"], text_color="white")
+        self.val_res.pack(fill="x", padx=40, pady=20)
+
+        return scroll_frame
+
+    def do_val(self):
+        # Get form data
+        full_name = self.val_inputs["Full Name"].get().strip()
+        email = self.val_inputs["Email Address"].get().strip()
+        username = self.val_inputs["Username"].get().strip()
+        message = self.val_inputs["Message"].get().strip()
         
-        for i in range(3):
-            type_frame.columnconfigure(i, weight=1)
-        
-        # Input area
-        tk.Label(content, text="Enter Input to Validate", 
-                font=("Arial", 10), bg="#1e2139", fg="#94a3b8").pack(anchor=tk.W, pady=(0, 8))
-        
-        self.input_text = tk.Text(content, height=5, font=("Arial", 11), 
-                                 bg="#2d3250", fg="white", insertbackground="white", 
-                                 relief=tk.FLAT, wrap=tk.WORD, borderwidth=0,
-                                 highlightthickness=0, padx=15, pady=12)
-        self.input_text.pack(fill=tk.X, pady=(0, 25))
-        
-        # Validate button
-        validate_btn = tk.Button(content, text="Validate Input", 
-                                command=self.validate_input,
-                                bg="#06b6d4", fg="white", font=("Arial", 12, "bold"),
-                                relief=tk.FLAT, cursor="hand2", padx=30, pady=15,
-                                borderwidth=0, activebackground="#0891b2")
-        validate_btn.pack(fill=tk.X, pady=(0, 25))
-        
-        self.val_result_frame = tk.Frame(content, bg="#1e2139")
-        self.val_result_frame.pack(fill=tk.BOTH, expand=True)
-    
-    def select_validation_type(self, val_type):
-        self.validation_type.set(val_type)
-        
-        # Update button colors
-        for vtype, btn in self.type_buttons.items():
-            if vtype == val_type:
-                btn.configure(bg="#06b6d4", fg="white")
-            else:
-                btn.configure(bg="#2d3250", fg="#94a3b8")
-    
-    def validate_input(self):
-        for widget in self.val_result_frame.winfo_children():
-            widget.destroy()
-        
-        input_value = self.input_text.get("1.0", tk.END).strip()
-        val_type = self.validation_type.get()
-        
-        if not input_value:
+        # Check if all fields are provided
+        if not all([full_name, email, username, message]):
+            self.val_res.delete("1.0", "end")
+            self.val_res.insert("end", "⚠️ Error: All fields are required!")
             return
         
-        if val_type == "email":
-            result = self.validate_email(input_value)
-        elif val_type == "url":
-            result = self.validate_url(input_value)
-        elif val_type == "phone":
-            result = self.validate_phone(input_value)
-        elif val_type == "alphanumeric":
-            result = self.validate_alphanumeric(input_value)
-        elif val_type == "text":
-            result = self.validate_text(input_value)
-        elif val_type == "sql":
-            result = self.validate_sql(input_value)
+        # Sanitize inputs first using InputValidator
+        sanitized_name, name_sanitized, name_notes = InputValidator.sanitize_input(full_name, 'name')
+        sanitized_email, email_sanitized, email_notes = InputValidator.sanitize_input(email, 'email')
+        sanitized_username, username_sanitized, username_notes = InputValidator.sanitize_input(username, 'username')
+        sanitized_message, message_sanitized, message_notes = InputValidator.sanitize_input(message, 'message')
+        
+        # Validate sanitized inputs using InputValidator
+        name_valid, name_errors = InputValidator.validate_full_name(sanitized_name)
+        email_valid, email_errors = InputValidator.validate_email_simple(sanitized_email)
+        username_valid, username_errors = InputValidator.validate_username(sanitized_username)
+        message_valid, message_errors = InputValidator.validate_message(sanitized_message)
+        
+        # Build results output
+        output = "=" * 60 + "\n"
+        output += "VALIDATION RESULTS\n"
+        output += "=" * 60 + "\n\n"
+        
+        # Full Name results
+        output += f"Full Name: {'✓ Valid' if name_valid else '✗ Invalid'}\n"
+        if not name_valid:
+            for error in name_errors:
+                output += f"  - {error}\n"
+        if name_sanitized:
+            output += f"  - Sanitized: {', '.join(name_notes)}\n"
+        output += "\n"
+        
+        # Email results
+        output += f"Email: {'✓ Valid' if email_valid else '✗ Invalid'}\n"
+        if not email_valid:
+            for error in email_errors:
+                output += f"  - {error}\n"
+        if email_sanitized:
+            output += f"  - Sanitized: {', '.join(email_notes)}\n"
+        output += "\n"
+        
+        # Username results
+        output += f"Username: {'✓ Valid' if username_valid else '✗ Invalid'}\n"
+        if not username_valid:
+            for error in username_errors:
+                output += f"  - {error}\n"
+        if username_sanitized:
+            output += f"  - Sanitized: {', '.join(username_notes)}\n"
+        output += "\n"
+        
+        # Message results
+        output += f"Message: {'✓ Valid' if message_valid else '✗ Invalid'}\n"
+        if not message_valid:
+            for error in message_errors:
+                output += f"  - {error}\n"
+        if message_sanitized:
+            output += f"  - Sanitized: {', '.join(message_notes)}\n"
+        output += "\n"
+        
+        # Sanitized output section
+        output += "=" * 60 + "\n"
+        output += "SANITIZED OUTPUT\n"
+        output += "=" * 60 + "\n\n"
+        output += f"Full Name: {sanitized_name if name_valid else '[INVALID - Cannot display]'}\n"
+        output += f"Email: {sanitized_email if email_valid else '[INVALID - Cannot display]'}\n"
+        output += f"Username: {sanitized_username if username_valid else '[INVALID - Cannot display]'}\n"
+        output += f"Message: {sanitized_message[:100] if message_valid else '[INVALID - Cannot display]'}{'...' if message_valid and len(sanitized_message) > 100 else ''}\n\n"
+        
+        # Summary
+        all_valid = name_valid and email_valid and username_valid and message_valid
+        any_sanitized = name_sanitized or email_sanitized or username_sanitized or message_sanitized
+        
+        output += "=" * 60 + "\n"
+        output += "SUMMARY\n"
+        output += "=" * 60 + "\n"
+        if all_valid and not any_sanitized:
+            output += "✓ All fields are valid. No sanitization needed.\n"
+        elif all_valid and any_sanitized:
+            output += "✓ All fields are valid after sanitization.\n"
         else:
-            result = {"isValid": False, "sanitized": "", "errors": ["Unknown type"], "warnings": []}
+            output += "✗ Some fields contain errors. Please correct them.\n"
+        
+        output += "\nProcess Complete.\n"
         
         # Display results
-        if result["isValid"]:
-            bg_color = "#064e3b"
-            border_color = "#10b981"
-            status_icon = "✓"
-            status_text = "Valid Input"
-            status_color = "#10b981"
-        else:
-            bg_color = "#7f1d1d"
-            border_color = "#ef4444"
-            status_icon = "✗"
-            status_text = "Invalid Input"
-            status_color = "#ef4444"
-        
-        result_frame = tk.Frame(self.val_result_frame, bg=border_color)
-        result_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-        
-        inner_frame = tk.Frame(result_frame, bg=bg_color)
-        inner_frame.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
-        
-        inner = tk.Frame(inner_frame, bg=bg_color)
-        inner.pack(fill=tk.BOTH, expand=True, padx=25, pady=25)
-        
-        status_frame = tk.Frame(inner, bg=bg_color)
-        status_frame.pack(anchor=tk.W, pady=(0, 20))
-        
-        tk.Label(status_frame, text=status_icon, font=("Arial", 18, "bold"), 
-                bg=bg_color, fg=status_color).pack(side=tk.LEFT, padx=(0, 10))
-        tk.Label(status_frame, text=status_text, font=("Arial", 16, "bold"), 
-                bg=bg_color, fg=status_color).pack(side=tk.LEFT)
-        
-        if result["errors"]:
-            tk.Label(inner, text="Errors:", font=("Arial", 11, "bold"), 
-                    bg=bg_color, fg="#fca5a5").pack(anchor=tk.W, pady=(5, 5))
-            for error in result["errors"]:
-                tk.Label(inner, text=f"• {error}", font=("Arial", 10), 
-                        bg=bg_color, fg="#fca5a5").pack(anchor=tk.W, padx=(15, 0), pady=2)
-        
-        if result["warnings"]:
-            tk.Label(inner, text="Warnings:", font=("Arial", 11, "bold"), 
-                    bg=bg_color, fg="#fde047").pack(anchor=tk.W, pady=(10, 5))
-            for warning in result["warnings"]:
-                tk.Label(inner, text=f"• {warning}", font=("Arial", 10), 
-                        bg=bg_color, fg="#fde047").pack(anchor=tk.W, padx=(15, 0), pady=2)
-        
-        tk.Label(inner, text="Sanitized Output:", font=("Arial", 11, "bold"), 
-                bg=bg_color, fg="white").pack(anchor=tk.W, pady=(15, 8))
-        
-        sanitized_frame = tk.Frame(inner, bg="#1a1d2e")
-        sanitized_frame.pack(fill=tk.X)
-        
-        tk.Label(sanitized_frame, text=result["sanitized"] or "(empty)", 
-                font=("Courier", 10), bg="#1a1d2e", fg="#06b6d4", 
-                wraplength=700, anchor=tk.W).pack(padx=15, pady=15)
-    
-    def validate_email(self, email):
-        sanitized = email.strip()
-        email_regex = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
-        
-        if not re.match(email_regex, sanitized):
-            return {"isValid": False, "sanitized": sanitized, 
-                   "errors": ["Invalid email format"], "warnings": []}
-        
-        warnings = []
-        xss_pattern = r'<script|javascript:|onerror=|onload='
-        if re.search(xss_pattern, sanitized, re.IGNORECASE):
-            warnings.append("⚠️ Potential XSS attempt detected")
-        
-        return {"isValid": True, "sanitized": sanitized, "errors": [], "warnings": warnings}
-    
-    def validate_url(self, url):
-        sanitized = url.strip()
-        url_regex = r'^https?://[^\s/$.?#].[^\s]*$'
-        
-        if not re.match(url_regex, sanitized, re.IGNORECASE):
-            return {"isValid": False, "sanitized": sanitized, 
-                   "errors": ["Invalid URL format"], "warnings": []}
-        
-        warnings = []
-        xss_pattern = r'<script|javascript:|onerror=|onload='
-        if re.search(xss_pattern, sanitized, re.IGNORECASE):
-            warnings.append("⚠️ Potential XSS attempt detected")
-        
-        return {"isValid": True, "sanitized": sanitized, "errors": [], "warnings": warnings}
-    
-    def validate_phone(self, phone):
-        sanitized = re.sub(r'\D', '', phone)
-        
-        if not re.match(r'^\d{10,15}$', sanitized):
-            return {"isValid": False, "sanitized": sanitized, 
-                   "errors": ["Invalid phone number (10-15 digits required)"], "warnings": []}
-        
-        return {"isValid": True, "sanitized": sanitized, "errors": [], "warnings": []}
-    
-    def validate_alphanumeric(self, text):
-        sanitized = re.sub(r'[^a-zA-Z0-9]', '', text)
-        warnings = []
-        
-        if sanitized != text.strip():
-            warnings.append("Special characters removed")
-        
-        return {"isValid": True, "sanitized": sanitized, "errors": [], "warnings": warnings}
-    
-    def validate_text(self, text):
-        sanitized = text.replace('\0', '').strip()
-        warnings = []
-        
-        xss_pattern = r'<script|javascript:|onerror=|onload='
-        if re.search(xss_pattern, sanitized, re.IGNORECASE):
-            warnings.append("⚠️ Potential XSS attempt detected")
-        
-        return {"isValid": True, "sanitized": sanitized, "errors": [], "warnings": warnings}
-    
-    def validate_sql(self, text):
-        sanitized = text.strip()
-        warnings = []
-        
-        sql_pattern = r'\b(union|select|drop|delete|insert|update)\b'
-        if re.search(sql_pattern, sanitized, re.IGNORECASE):
-            warnings.append("⚠️ Potential SQL injection pattern detected")
-        
-        errors = ["SQL injection pattern detected"] if warnings else []
-        
-        return {"isValid": not warnings, "sanitized": sanitized, 
-               "errors": errors, "warnings": warnings}
-    
-    def copy_to_clipboard(self, text):
-        self.root.clipboard_clear()
-        self.root.clipboard_append(text)
-        messagebox.showinfo("Copied", "Password copied to clipboard!")
+        self.val_res.delete("1.0", "end")
+        self.val_res.insert("end", output)
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = WebSecurityTool(root)
-    root.mainloop()
+    app = WebSecurityTool()
+    app.mainloop()

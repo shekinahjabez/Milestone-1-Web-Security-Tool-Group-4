@@ -2,67 +2,50 @@ import hashlib
 import requests
 from zxcvbn import zxcvbn
 
-class Password_Assessor:
-    HIBP_API_URL = "https://api.pwnedpasswords.com/range/"
+def evaluate_password(password):
+    # Line 10 should be here or inside this function
+    feedback = []
+    score = 0
 
-    @staticmethod
-    def check_hibp_breach(password):
-        """
-        Checks if password exists in HIBP database using k-Anonymity.
-        Returns the count of times breached, or 0 if safe.
-        """
-        # SHA-1 hash the password
-        sha1_pwd = hashlib.sha1(password.encode('utf-8')).hexdigest().upper()
-        prefix, suffix = sha1_pwd[:5], sha1_pwd[5:]
-        
-        try:
-            # Send only the first 5 chars to preserve privacy
-            response = requests.get(f"{Password_Assessor.HIBP_API_URL}{prefix}", timeout=5)
-            if response.status_code != 200:
-                return 0 # Fail gracefully
-            
-            # Search response for our specific suffix
-            hashes = (line.split(':') for line in response.text.splitlines())
-            for h, count in hashes:
-                if h == suffix:
-                    return int(count)
-        except requests.RequestException:
-            return 0
-        return 0
+    # 1. Common Password Check
+    if password.lower() in COMMON_PASSWORDS:
+        return "Weak", "Password is commonly used."
 
-    @classmethod
-    def evaluate_password(cls, password, user_inputs=None):
-        """
-        Combines zxcvbn heuristics with live HIBP breach data.
-        """
-        if not password:
-            return "Weak", "Password cannot be empty."
+    # 2. Dictionary Word Check
+    for word in DICTIONARY_WORDS:
+        if word in password.lower():
+            return "Weak", "Password contains a dictionary word."
 
-        # 1. Check Live Breach Data (Critical Priority)
-        pwned_count = cls.check_hibp_breach(password)
-        if pwned_count > 0:
-            return "Weak", f"CRITICAL: This password was found in {pwned_count:,} data breaches. Change it immediately."
+    # 3. Criteria Checks
+    if len(password) >= 12:
+        score += 1
+    else:
+        feedback.append("• Minimum 12 characters required.")
 
-        # 2. Advanced Heuristics with zxcvbn
-        # user_inputs can include username/email to detect personalized weak patterns
-        results = zxcvbn(password, user_inputs=user_inputs)
-        score = results['score'] # 0-4
-        feedback = results['feedback']['warning']
-        suggestions = results['feedback']['suggestions']
+    if re.search(r"[A-Z]", password):
+        score += 1
+    else:
+        feedback.append("• Add uppercase letters.")
 
-        # 3. Final Multi-layered Rating
-        if score <= 1:
-            status = "Weak"
-        elif score <= 2:
-            status = "Moderate"
-        elif score >= 3:
-            # Enforce absolute minimum length despite high entropy
-            if len(password) < 12:
-                status = "Moderate"
-                suggestions.append("Even with patterns, aim for at least 12 characters.")
-            else:
-                status = "Strong"
-        
-        # Format detailed report
-        report = f"{feedback}\n" + "\n".join([f"• {s}" for s in suggestions])
-        return status, report.strip() or "Password is secure and unique."
+    if re.search(r"[a-z]", password):
+        score += 1
+    else:
+        feedback.append("• Add lowercase letters.")
+
+    if re.search(r"[0-9]", password):
+        score += 1
+    else:
+        feedback.append("• Add numbers.")
+
+    if re.search(r"[!@#$%^&*()_+=\-[\]{};:'\",.<>?/\\|]", password):
+        score += 1
+    else:
+        feedback.append("• Add special characters.")
+
+    # 4. Final Rating Logic based on MO-IT142
+    if score <= 2:
+        return "Weak", "\n".join(feedback)
+    elif score <= 4:
+        return "Moderate", "\n".join(feedback)
+    else:
+        return "Strong", "Password meets security requirements."
