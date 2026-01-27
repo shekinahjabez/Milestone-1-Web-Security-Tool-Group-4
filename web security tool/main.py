@@ -2,12 +2,13 @@ import customtkinter as ctk
 import random
 import string
 import hashlib
+from password_assessor import Password_Assessor
 import html
 import re
 from datetime import datetime
 
 # 1. Import your custom logic
-from password_assessor import evaluate_password
+# from password_assessor import evaluate_password
 from password_generator import process_generation
 from input_validator import InputValidator
 

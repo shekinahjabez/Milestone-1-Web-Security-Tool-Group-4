@@ -1,5 +1,6 @@
-import re
-from utils import COMMON_PASSWORDS, DICTIONARY_WORDS
+import hashlib
+import requests
+from zxcvbn import zxcvbn
 
 def evaluate_password(password):
     # Line 10 should be here or inside this function
