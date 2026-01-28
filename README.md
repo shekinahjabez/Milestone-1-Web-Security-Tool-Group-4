@@ -170,5 +170,3 @@ Security Script Programming – Academic Project
 This project is intended for **educational purposes only**.
 Unauthorized commercial use is not permitted.
 
----
-Just tell me 😄
