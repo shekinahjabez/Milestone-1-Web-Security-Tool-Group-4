@@ -1,0 +1,9 @@
+customtkinter==5.2.2
+pillow==10.0.0
+pyperclip==1.11.0
+darkdetect==0.8.0
+packaging==26.0
+
+bcrypt==4.1.2
+zxcvbn==4.5.0
+requests
