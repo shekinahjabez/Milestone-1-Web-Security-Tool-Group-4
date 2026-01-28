@@ -1,8 +1,8 @@
 import customtkinter as ctk
-import hashlib
 from datetime import datetime
 
 from ..input_validator import InputValidator
+from .components.section_title import SectionTitle
 
 
 class ValidatorFrame(ctk.CTkScrollableFrame):
@@ -22,22 +22,14 @@ class ValidatorFrame(ctk.CTkScrollableFrame):
     # UI BUILD
     # -----------------------
     def _build_ui(self):
-        # Header
-        ctk.CTkLabel(
+        # Header (refactored)
+        SectionTitle(
             self,
-            text="Form Input Validator",
-            font=("Inter", 24, "bold"),
-            text_color="white",
-        ).pack(anchor="w", padx=40, pady=(20, 0))
+            title="Form Input Validator",
+            subtitle="Validate and sanitize web form submissions",
+            colors=self.COLORS,
+        ).pack(anchor="w", padx=40, pady=(20, 18))
 
-        ctk.CTkLabel(
-            self,
-            text="Validate and sanitize web form submissions",
-            font=("Inter", 14),
-            text_color=self.COLORS["text_dim"],
-        ).pack(anchor="w", padx=40, pady=(2, 18))
-
-        # Input grid container (mimics 2-column layout)
         form_card = ctk.CTkFrame(
             self,
             fg_color=self.COLORS["bg_card"],
@@ -49,44 +41,29 @@ class ValidatorFrame(ctk.CTkScrollableFrame):
 
         grid = ctk.CTkFrame(form_card, fg_color="transparent")
         grid.pack(fill="x", padx=20, pady=18)
-
         grid.grid_columnconfigure(0, weight=1)
         grid.grid_columnconfigure(1, weight=1)
 
-        # Full Name
-        self.fullname = self._labeled_entry(
-            grid, "Full Name", "John Doe", row=0, col=0
-        )
-        # Email
-        self.email = self._labeled_entry(
-            grid, "Email Address", "john@example.com", row=0, col=1
-        )
-        # Username
-        self.username = self._labeled_entry(
-            grid, "Username", "johndoe123", row=1, col=0
-        )
-        # Message (spans 2 cols)
-        self.message = self._labeled_textbox(
-            grid, "Message", "Your message here...", row=1, col=1
-        )
+        self.fullname = self._labeled_entry(grid, "Full Name", "John Doe", row=0, col=0)
+        self.email = self._labeled_entry(grid, "Email Address", "john@example.com", row=0, col=1)
+        self.username = self._labeled_entry(grid, "Username", "johndoe123", row=1, col=0)
+        self.message = self._labeled_textbox(grid, "Message", "Your message here...", row=1, col=1)
 
-        # Validate button
         self.validate_btn = ctk.CTkButton(
             self,
             text="🛡️  Validate & Sanitize",
-            fg_color="#4f46e5",          # indigo feel
+            fg_color=self.COLORS["indigo"],
             hover_color="#4338ca",
             height=52,
             font=("Inter", 14, "bold"),
+            text_color="white",
             command=self._handle_validate,
         )
         self.validate_btn.pack(fill="x", padx=40, pady=(6, 12))
 
-        # Results container
         self.results_area = ctk.CTkFrame(self, fg_color="transparent")
         self.results_area.pack(fill="x", padx=40, pady=(0, 30))
 
-        # Bind changes to enable/disable button like TSX
         for widget in (self.fullname, self.email, self.username):
             widget.bind("<KeyRelease>", lambda e: self._update_button_state())
         self.message.bind("<KeyRelease>", lambda e: self._update_button_state())
@@ -99,7 +76,7 @@ class ValidatorFrame(ctk.CTkScrollableFrame):
             wrap,
             text=label,
             font=("Inter", 12, "bold"),
-            text_color="white",
+            text_color=self.COLORS["text_main"],
         ).pack(anchor="w", pady=(0, 6))
 
         entry = ctk.CTkEntry(
@@ -107,9 +84,10 @@ class ValidatorFrame(ctk.CTkScrollableFrame):
             height=48,
             fg_color=self.COLORS["bg_dark"],
             border_color=self.COLORS["border"],
-            text_color="white",
+            border_width=1,
+            text_color=self.COLORS["text_main"],
             placeholder_text=placeholder,
-            placeholder_text_color="#9ca3af",
+            placeholder_text_color=self.COLORS["text_dim"],
         )
         entry.pack(fill="x")
         return entry
@@ -122,23 +100,20 @@ class ValidatorFrame(ctk.CTkScrollableFrame):
             wrap,
             text=label,
             font=("Inter", 12, "bold"),
-            text_color="white",
+            text_color=self.COLORS["text_main"],
         ).pack(anchor="w", pady=(0, 6))
 
-        # CustomTkinter textbox has no placeholder; we simulate lightly by prefill + focus handlers
         tb = ctk.CTkTextbox(
             wrap,
             height=120,
             fg_color=self.COLORS["bg_dark"],
             border_color=self.COLORS["border"],
-            text_color="white",
+            border_width=1,
+            text_color=self.COLORS["text_main"],
         )
         tb.pack(fill="x")
 
-        tb.insert("1.0", "")
         self._message_placeholder = placeholder
-
-        # Optional placeholder simulation (simple)
         tb.insert("1.0", placeholder)
         tb.configure(text_color=self.COLORS["text_dim"])
 
@@ -146,7 +121,7 @@ class ValidatorFrame(ctk.CTkScrollableFrame):
             current = tb.get("1.0", "end").strip()
             if current == self._message_placeholder:
                 tb.delete("1.0", "end")
-                tb.configure(text_color="white")
+                tb.configure(text_color=self.COLORS["text_main"])
 
         def on_focus_out(_):
             current = tb.get("1.0", "end").strip()
@@ -177,9 +152,9 @@ class ValidatorFrame(ctk.CTkScrollableFrame):
         )
 
         if all_filled:
-            self.validate_btn.configure(state="normal", fg_color="#4f46e5")
+            self.validate_btn.configure(state="normal", fg_color=self.COLORS["indigo"])
         else:
-            self.validate_btn.configure(state="disabled", fg_color="#64748b")  # slate-ish disabled
+            self.validate_btn.configure(state="disabled", fg_color=self.COLORS["text_dim"])
 
     # -----------------------
     # MAIN ACTION (NO LOGIC CHANGE)
@@ -190,39 +165,21 @@ class ValidatorFrame(ctk.CTkScrollableFrame):
         username = self.username.get().strip()
         message = self._get_message_value().strip()
 
-        # Clear results area
         for w in self.results_area.winfo_children():
             w.destroy()
 
-        # Sanitize first (your existing logic)
         sanitized_name, name_sanitized, name_notes = InputValidator.sanitize_input(full_name, "name")
         sanitized_email, email_sanitized, email_notes = InputValidator.sanitize_input(email, "email")
         sanitized_username, username_sanitized, username_notes = InputValidator.sanitize_input(username, "username")
         sanitized_message, message_sanitized, message_notes = InputValidator.sanitize_input(message, "message")
 
-        # Validate sanitized inputs (your existing logic)
         name_valid, name_errors = InputValidator.validate_full_name(sanitized_name)
         email_valid, email_errors = InputValidator.validate_email_simple(sanitized_email)
         username_valid, username_errors = InputValidator.validate_username(sanitized_username)
         message_valid, message_errors = InputValidator.validate_message(message)
 
-        # Timestamp (UI feature)
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        # Hashes (UI feature; does NOT change validator logic)
-        combined = f"{sanitized_name}|{sanitized_email}|{sanitized_username}|{sanitized_message}"
-        sha256_hash = hashlib.sha256(combined.encode("utf-8")).hexdigest()
-
-        # bcrypt hash is optional (won't break if bcrypt isn't installed)
-        bcrypt_hash = None
-        try:
-            import bcrypt  # pip install bcrypt
-            salt = bcrypt.gensalt(rounds=12)
-            bcrypt_hash = bcrypt.hashpw(combined.encode("utf-8"), salt).decode("utf-8")
-        except Exception:
-            bcrypt_hash = "(bcrypt not available)"
-
-        # Render sections
         self._render_validation_status([
             ("Full Name", name_valid, name_errors, name_notes),
             ("Email", email_valid, email_errors, email_notes),
@@ -236,8 +193,6 @@ class ValidatorFrame(ctk.CTkScrollableFrame):
             sanitized_username if username_valid else "",
             sanitized_message if message_valid else "",
         )
-
-        self._render_timestamp_and_hashes(timestamp, sha256_hash, bcrypt_hash)
 
         self._render_success_banner(name_valid, email_valid, username_valid, message_valid)
 
@@ -256,34 +211,41 @@ class ValidatorFrame(ctk.CTkScrollableFrame):
 
         ctk.CTkLabel(
             card,
-            text="VALIDATION STATUS",
+            text="Validation Status",
             font=("Inter", 12, "bold"),
-            text_color="white",
+            text_color=self.COLORS["text_main"],
         ).pack(anchor="w", padx=20, pady=(16, 10))
 
         for field, is_valid, errors, warnings in fields:
             ok = bool(is_valid)
 
+            bg = "#ecfdf5" if ok else "#fef2f2"
+            bd = "#a7f3d0" if ok else "#fecaca"
+            icon = "✅" if ok else "❌"
+            title_color = self.COLORS["success"] if ok else self.COLORS["danger"]
+
             row = ctk.CTkFrame(
                 card,
-                fg_color="#064e3b" if ok else "#2d1f21",
+                fg_color=bg,
                 corner_radius=12,
                 border_width=1,
-                border_color=self.COLORS["success"] if ok else self.COLORS["danger"],
+                border_color=bd,
             )
             row.pack(fill="x", padx=20, pady=6)
 
             left = ctk.CTkFrame(row, fg_color="transparent")
             left.pack(side="left", padx=14, pady=12)
 
-            icon = "✅" if ok else "❌"
-            ctk.CTkLabel(left, text=f"{icon}  {field}", font=("Inter", 12, "bold"),
-                         text_color=self.COLORS["text_main"]).pack(anchor="w")
+            ctk.CTkLabel(
+                left,
+                text=f"{icon}  {field}",
+                font=("Inter", 12, "bold"),
+                text_color=title_color,
+            ).pack(anchor="w")
 
             right = ctk.CTkFrame(row, fg_color="transparent")
             right.pack(side="right", padx=14, pady=12)
 
-            # Show first error or warning (like TSX)
             msg = ""
             msg_color = self.COLORS["text_dim"]
             if errors:
@@ -308,9 +270,9 @@ class ValidatorFrame(ctk.CTkScrollableFrame):
 
         ctk.CTkLabel(
             card,
-            text="SANITIZED DATA",
+            text="Sanitized Data",
             font=("Inter", 12, "bold"),
-            text_color="white",
+            text_color=self.COLORS["text_main"],
         ).pack(anchor="w", padx=20, pady=(16, 10))
 
         inner = ctk.CTkFrame(
@@ -342,13 +304,12 @@ class ValidatorFrame(ctk.CTkScrollableFrame):
             wrap,
             text=v,
             font=("Inter", 12),
-            text_color="white",
+            text_color=self.COLORS["text_main"],
             wraplength=820,
             justify="left",
         ).pack(anchor="w", pady=(4, 0))
 
     def _render_timestamp_and_hashes(self, timestamp, sha256_hash, bcrypt_hash):
-        # Timestamp card
         ts_card = ctk.CTkFrame(
             self.results_area,
             fg_color=self.COLORS["bg_card"],
@@ -360,19 +321,18 @@ class ValidatorFrame(ctk.CTkScrollableFrame):
 
         ctk.CTkLabel(
             ts_card,
-            text="TIMESTAMP",
+            text="Timestamp",
             font=("Inter", 12, "bold"),
-            text_color="white",
+            text_color=self.COLORS["text_main"],
         ).pack(anchor="w", padx=20, pady=(16, 8))
 
         ctk.CTkLabel(
             ts_card,
             text=timestamp,
             font=("Inter", 12),
-            text_color="white",
+            text_color=self.COLORS["text_main"],
         ).pack(anchor="w", padx=20, pady=(0, 16))
 
-        # Hashes card (added UI feature; safe)
         hash_card = ctk.CTkFrame(
             self.results_area,
             fg_color=self.COLORS["bg_card"],
@@ -384,13 +344,13 @@ class ValidatorFrame(ctk.CTkScrollableFrame):
 
         ctk.CTkLabel(
             hash_card,
-            text="HASHES (OF SANITIZED DATA)",
+            text="Hashes (of Sanitized Data)",
             font=("Inter", 12, "bold"),
-            text_color="white",
+            text_color=self.COLORS["text_main"],
         ).pack(anchor="w", padx=20, pady=(16, 10))
 
-        self._hash_row(hash_card, "SHA-256", sha256_hash, "#2563eb")
-        self._hash_row(hash_card, "Bcrypt", bcrypt_hash, "#4f46e5")
+        self._hash_row(hash_card, "SHA-256", sha256_hash, self.COLORS["blue"])
+        self._hash_row(hash_card, "Bcrypt", bcrypt_hash, self.COLORS["indigo"])
 
         ctk.CTkLabel(hash_card, text="", fg_color="transparent").pack(pady=(0, 10))
 
@@ -402,7 +362,7 @@ class ValidatorFrame(ctk.CTkScrollableFrame):
             row,
             text=label,
             font=("Inter", 11, "bold"),
-            text_color="white",
+            text_color=self.COLORS["text_dim"],
             width=90,
         ).pack(side="left")
 
@@ -411,6 +371,7 @@ class ValidatorFrame(ctk.CTkScrollableFrame):
             height=40,
             fg_color=self.COLORS["bg_dark"],
             border_color=self.COLORS["border"],
+            border_width=1,
             text_color=accent,
             font=("Consolas", 10, "bold"),
         )
@@ -424,6 +385,7 @@ class ValidatorFrame(ctk.CTkScrollableFrame):
             width=70,
             fg_color=self.COLORS["bg_dark"],
             hover_color=self.COLORS["border"],
+            text_color=self.COLORS["text_main"],
             command=lambda: self._copy_to_clipboard(str(value)),
         ).pack(side="right")
 
@@ -437,18 +399,22 @@ class ValidatorFrame(ctk.CTkScrollableFrame):
     def _render_success_banner(self, name_valid, email_valid, username_valid, message_valid):
         all_valid = name_valid and email_valid and username_valid and message_valid
 
+        bg = "#ecfdf5" if all_valid else "#fef2f2"
+        bd = "#a7f3d0" if all_valid else "#fecaca"
+        title_color = self.COLORS["success"] if all_valid else self.COLORS["danger"]
+
         banner = ctk.CTkFrame(
             self.results_area,
-            fg_color="#064e3b" if all_valid else "#2d1f21",
+            fg_color=bg,
             corner_radius=16,
             border_width=1,
-            border_color=self.COLORS["success"] if all_valid else self.COLORS["danger"],
+            border_color=bd,
         )
         banner.pack(fill="x", pady=(0, 12))
 
         title = "✓ Validation Complete" if all_valid else "✗ Validation Finished With Errors"
         subtitle = (
-            "All form data has been validated and sanitized"
+            "All form data has been validated and sanitized."
             if all_valid
             else "Some fields contain errors. Please correct them and try again."
         )
@@ -457,12 +423,12 @@ class ValidatorFrame(ctk.CTkScrollableFrame):
             banner,
             text=title,
             font=("Inter", 16, "bold"),
-            text_color=self.COLORS["success"] if all_valid else self.COLORS["danger"],
+            text_color=title_color,
         ).pack(pady=(14, 4))
 
         ctk.CTkLabel(
             banner,
             text=subtitle,
             font=("Inter", 12),
-            text_color="white",
+            text_color=self.COLORS.get("text_mid", self.COLORS["text_main"]),
         ).pack(pady=(0, 14))

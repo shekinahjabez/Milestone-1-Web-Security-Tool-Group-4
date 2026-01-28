@@ -5,7 +5,7 @@ from .icon_tile import IconTile
 class ToolCard(ctk.CTkFrame):
     """
     Clickable tool card (Analyze / Generate / Validate).
-    Uses IconTile for perfect icon centering + tinting.
+    Uses IconTile PNG icons + active underline.
     """
 
     def __init__(
@@ -15,7 +15,7 @@ class ToolCard(ctk.CTkFrame):
         tool_id: str,
         title: str,
         subtitle: str,
-        emoji: str,
+        icon_path: str,
         color_name: str,
         colors: dict,
         on_click,      # callable: (tool_id: str) -> None
@@ -39,7 +39,6 @@ class ToolCard(ctk.CTkFrame):
 
         self._is_active = False
 
-        # click helper
         def _click(_=None):
             self.on_click(self.tool_id)
 
@@ -50,10 +49,10 @@ class ToolCard(ctk.CTkFrame):
         self.inner.pack(fill="both", expand=True, padx=18, pady=16)
         self.inner.bind("<Button-1>", _click)
 
-        # icon tile (now component)
+        # icon tile (PNG)
         self.icon_tile = IconTile(
             self.inner,
-            emoji=emoji,
+            icon_path=icon_path,
             color_name=self.color_name,
             colors=self.COLORS,
             tint_bg_for=self._tint_bg_for,
@@ -77,28 +76,24 @@ class ToolCard(ctk.CTkFrame):
             self.inner,
             text=subtitle,
             font=("Inter", 13),
-            text_color="#475569",  # slate-600
+            text_color="#475569",
             wraplength=220,
             justify="center",
         )
         self.sub_lbl.pack(anchor="center", pady=(4, 0))
         self.sub_lbl.bind("<Button-1>", _click)
 
-        # bottom active bar
-        bar_wrap = ctk.CTkFrame(self, fg_color="transparent", height=10)
-        bar_wrap.pack(side="bottom", fill="x")
-        bar_wrap.pack_propagate(False)
-
+        # active underline (bottom)
         self.bar = ctk.CTkFrame(
-            bar_wrap,
+            self,
             fg_color="transparent",
             height=5,
             corner_radius=999,
         )
-        self.bar.pack(fill="x", padx=12, pady=(0, 10))
+        self.bar.pack(side="bottom", fill="x", padx=14, pady=(0, 0))
         self.bar.pack_propagate(False)
 
-        # hover behavior (inactive only)
+        # hover (inactive only)
         def _on_enter(_):
             if not self._is_active:
                 self.configure(
@@ -119,7 +114,6 @@ class ToolCard(ctk.CTkFrame):
             w.bind("<Enter>", _on_enter)
             w.bind("<Leave>", _on_leave)
 
-        # also make icon tile contribute to hover (optional but feels nice)
         self.icon_tile.bind("<Enter>", _on_enter)
         self.icon_tile.bind("<Leave>", _on_leave)
         self.icon_tile.icon_lbl.bind("<Enter>", _on_enter)

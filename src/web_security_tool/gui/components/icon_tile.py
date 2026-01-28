@@ -1,23 +1,26 @@
 import customtkinter as ctk
+from PIL import Image
 
 
 class IconTile(ctk.CTkFrame):
     """
     Square icon tile with perfect centering.
     Handles idle / hover / active states.
+    PNG icon version (no emoji).
     """
 
     def __init__(
         self,
         parent,
         *,
-        emoji: str,
+        icon_path: str,
         color_name: str,
         colors: dict,
         tint_bg_for,    # (color_name, active) -> color
         accent_for,     # (color_name) -> color
         size: int = 58,
         radius: int = 16,
+        icon_size: int = 26,
         on_click=None,
     ):
         self.COLORS = colors
@@ -36,13 +39,12 @@ class IconTile(ctk.CTkFrame):
         )
         self.pack_propagate(False)
 
-        # Emoji icon — use place() for TRUE center
-        self.icon_lbl = ctk.CTkLabel(
-            self,
-            text=emoji,
-            font=("Inter", 22, "bold"),
-            text_color=self.COLORS["text_dim"],
-        )
+        # Load PNG icon
+        img = Image.open(icon_path).convert("RGBA")
+        self._icon_img = ctk.CTkImage(light_image=img, dark_image=img, size=(icon_size, icon_size))
+
+        # Center icon
+        self.icon_lbl = ctk.CTkLabel(self, text="", image=self._icon_img)
         self.icon_lbl.place(relx=0.5, rely=0.5, anchor="center")
 
         # Click handling
@@ -53,20 +55,7 @@ class IconTile(ctk.CTkFrame):
     def set_active(self, is_active: bool):
         """Switch between active and idle state."""
         self._is_active = is_active
-        if is_active:
-            self.configure(
-                fg_color=self._tint_bg_for(self.color_name, active=True)
-            )
-            self.icon_lbl.configure(
-                text_color=self._accent_for(self.color_name)
-            )
-        else:
-            self.configure(
-                fg_color=self._tint_bg_for(self.color_name, active=False)
-            )
-            self.icon_lbl.configure(
-                text_color=self.COLORS["text_dim"]
-            )
+        self.configure(fg_color=self._tint_bg_for(self.color_name, active=is_active))
 
     def set_hover(self, hovered: bool):
         """Subtle hover tint (ignored when active)."""
@@ -74,8 +63,6 @@ class IconTile(ctk.CTkFrame):
             return
 
         if hovered:
-            self.configure(fg_color="#eef2ff")  # soft slate/indigo tint
+            self.configure(fg_color="#eef2ff")
         else:
-            self.configure(
-                fg_color=self._tint_bg_for(self.color_name, active=False)
-            )
+            self.configure(fg_color=self._tint_bg_for(self.color_name, active=False))

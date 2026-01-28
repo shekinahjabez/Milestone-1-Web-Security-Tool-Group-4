@@ -1,4 +1,3 @@
-# Update your main file (where WebSecurityTool lives)
 import customtkinter as ctk
 
 from .gui.analyze import StrengthFrame
@@ -102,9 +101,27 @@ class WebSecurityTool(ctk.CTk):
         cards_row.grid_columnconfigure(2, weight=1)
 
         tools = [
-            {"id": "strength", "title": "Analyze", "subtitle": "Password strength", "color": "blue", "emoji": "👁️"},
-            {"id": "generator", "title": "Generate", "subtitle": "Secure password", "color": "emerald", "emoji": "⚡"},
-            {"id": "validator", "title": "Validate", "subtitle": "Form inputs", "color": "indigo", "emoji": "🛡️"},
+            {
+                "id": "strength",
+                "title": "Analyze",
+                "subtitle": "Password strength",
+                "color": "blue",
+                "icon": "src/web_security_tool/gui/assets/icons/eye.png",
+            },
+            {
+                "id": "generator",
+                "title": "Generate",
+                "subtitle": "Secure password",
+                "color": "emerald",
+                "icon": "src/web_security_tool/gui/assets/icons/bolt.png",
+            },
+            {
+                "id": "validator",
+                "title": "Validate",
+                "subtitle": "Form inputs",
+                "color": "indigo",
+                "icon": "src/web_security_tool/gui/assets/icons/shield.png",
+            },
         ]
 
         for i, tool in enumerate(tools):
@@ -113,7 +130,7 @@ class WebSecurityTool(ctk.CTk):
                 tool_id=tool["id"],
                 title=tool["title"],
                 subtitle=tool["subtitle"],
-                emoji=tool["emoji"],
+                icon_path=tool["icon"],
                 color_name=tool["color"],
                 colors=COLORS,
                 on_click=self._set_active,
@@ -141,10 +158,12 @@ class WebSecurityTool(ctk.CTk):
         footer.pack(fill="x", pady=(6, 2))
         ctk.CTkLabel(
             footer,
-            text="Powered by Web Crypto-style logic • SHA-256 & Bcrypt hashing",
+            text="Group 4\nMO-IT142 - Security Script Programming",
             text_color=COLORS["text_dim"],
             font=("Inter", 12),
+            justify="center",
         ).pack(anchor="center")
+
 
     def _accent_for(self, color_name: str) -> str:
         return COLORS["blue"] if color_name == "blue" else COLORS["emerald"] if color_name == "emerald" else COLORS["indigo"]
