@@ -156,10 +156,10 @@ Feedback:
 
 ## 👨‍💻 Authors
 
-**Lenie Joice Mendoza**
-**Leonardo Arellano**
-**Maricar Punzalan**
-**Shekinah Jabez Florentino**
+* **Lenie Joice Mendoza**
+* **Leonardo Arellano**
+* **Maricar Punzalan**
+* **Shekinah Jabez Florentino**
 Security Script Programming – Academic Project
 
 ---
