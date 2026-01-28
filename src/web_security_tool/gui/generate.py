@@ -1,5 +1,3 @@
-# src/web_security_tool/gui/generate.py
-
 import customtkinter as ctk
 import json
 from pathlib import Path
