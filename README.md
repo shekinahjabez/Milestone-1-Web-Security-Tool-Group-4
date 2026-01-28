@@ -1,8 +1,3 @@
-Nice, a solid README will really level this up 👍
-Below is a **clean, academic-friendly README** you can use **as-is** or tweak slightly to match your final submission. It’s written for a **Python-based Web Security Tool** and fits well with a *Security Script Programming* subject.
-
----
-
 # 🛡️ Web Security Tool (Security Script Programming Project)
 
 ## 📌 Project Overview
