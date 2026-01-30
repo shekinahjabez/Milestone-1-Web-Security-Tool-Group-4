@@ -25,6 +25,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/", include_in_schema=False)
+def root():
+    return {
+        "status": "ok",
+        "service": "SecureKit Backend",
+        "hint": "Use /api, /api/assess, /api/validate, /api/generate",
+    }
+
+
 class GenerateRequest(BaseModel):
     length: int = Field(default=16, ge=4, le=128)
 
