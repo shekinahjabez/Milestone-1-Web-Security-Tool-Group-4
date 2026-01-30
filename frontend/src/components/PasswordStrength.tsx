@@ -81,73 +81,83 @@ export function PasswordStrength() {
   };
 
   const handleCheckPassword = async () => {
-    if (password.trim().length === 0) {
-      setShowEmptyError(true);
-      setResult(null);
-      return;
+  if (password.trim().length === 0) {
+    setShowEmptyError(true);
+    setResult(null);
+    return;
+  }
+
+  setShowEmptyError(false);
+  setLoading(true);
+
+  try {
+    const API = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "");
+    if (!API) throw new Error("VITE_API_BASE_URL is not set");
+
+    const r = await fetch(`${API}/api/assess`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+
+    // ✅ Safety: detect HTML/non-JSON responses
+    const ct = r.headers.get("content-type") || "";
+    if (!ct.includes("application/json")) {
+      const text = await r.text();
+      throw new Error(`Expected JSON, got ${ct}. Body: ${text.slice(0, 120)}`);
     }
 
-    setShowEmptyError(false);
-    setLoading(true);
+    const data: ApiAssessResponse | any = await r.json();
 
-    try {
-      const r = await fetch("/api/assess", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
-      });
-
-      const data: ApiAssessResponse | any = await r.json();
-
-      if (!r.ok) {
-        const msg = data?.detail ? String(data.detail) : "Failed to assess password.";
-        const details = computeDetailsFromRules(password);
-        setResult({
-          score: 0,
-          label: "Weak",
-          color: "text-red-600",
-          feedback: [msg],
-          details,
-        });
-        return;
-      }
-
-      const tuple = data?.result;
-      const backendLabel = Array.isArray(tuple) ? String(tuple[0]) : "Weak";
-      const backendMessage = Array.isArray(tuple) ? String(tuple[1] ?? "") : "";
-
-      const ui = labelToUI(backendLabel);
-      const details = computeDetailsFromRules(password);
-
-      // If backend explicitly says common/dictionary, reflect that in the checklist
-      const msgLower = backendMessage.toLowerCase();
-      if (msgLower.includes("commonly used") || msgLower.includes("dictionary word")) {
-        details.commonPassword = false;
-      }
-
-      const feedback = messageToFeedback(backendLabel, backendMessage);
-
-      setResult({
-        score: ui.score,
-        label: ui.label,
-        color: ui.color,
-        feedback: feedback.length ? feedback : ["Password meets security requirements."],
-        details,
-      });
-    } catch (err) {
-      console.error(err);
+    if (!r.ok) {
+      const msg = data?.detail ? String(data.detail) : "Failed to assess password.";
       const details = computeDetailsFromRules(password);
       setResult({
         score: 0,
         label: "Weak",
         color: "text-red-600",
-        feedback: ["Network error while assessing password."],
+        feedback: [msg],
         details,
       });
-    } finally {
-      setLoading(false);
+      return;
     }
-  };
+
+    const tuple = data?.result;
+    const backendLabel = Array.isArray(tuple) ? String(tuple[0]) : "Weak";
+    const backendMessage = Array.isArray(tuple) ? String(tuple[1] ?? "") : "";
+
+    const ui = labelToUI(backendLabel);
+    const details = computeDetailsFromRules(password);
+
+    // If backend explicitly says common/dictionary, reflect that in the checklist
+    const msgLower = backendMessage.toLowerCase();
+    if (msgLower.includes("commonly used") || msgLower.includes("dictionary word")) {
+      details.commonPassword = false;
+    }
+
+    const feedback = messageToFeedback(backendLabel, backendMessage);
+
+    setResult({
+      score: ui.score,
+      label: ui.label,
+      color: ui.color,
+      feedback: feedback.length ? feedback : ["Password meets security requirements."],
+      details,
+    });
+  } catch (err) {
+    console.error(err);
+    const details = computeDetailsFromRules(password);
+    setResult({
+      score: 0,
+      label: "Weak",
+      color: "text-red-600",
+      feedback: ["Network error while assessing password."],
+      details,
+    });
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="space-y-4">
