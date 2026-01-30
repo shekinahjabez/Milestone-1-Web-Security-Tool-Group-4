@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { CheckCircle2, XCircle, Shield} from "lucide-react";
+const API = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "");
+
 
 interface FormData {
   fullName: string;
@@ -51,24 +53,38 @@ export function InputValidator() {
     setResult(null);
   };
 
-  async function validateField(field_type: "name" | "email" | "username" | "message", value: string): Promise<FieldValidation> {
-    const r = await fetch("/api/validate", {
+  async function validateField(
+  field_type: "name" | "email" | "username" | "message",
+  value: string
+): Promise<FieldValidation> {
+  try {
+    if (!API) {
+      return {
+        isValid: false,
+        sanitized: "",
+        errors: ["VITE_API_BASE_URL is not set"],
+        warnings: [],
+      };
+    }
+
+    const r = await fetch(`${API}/api/validate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ field_type, value }),
     });
 
-    let data: ApiValidateResponse | any;
-    try {
-      data = await r.json();
-    } catch {
+    const ct = r.headers.get("content-type") || "";
+    if (!ct.includes("application/json")) {
+      const text = await r.text();
       return {
         isValid: false,
         sanitized: "",
         errors: [`Server returned ${r.status} (non-JSON)`],
-        warnings: [],
+        warnings: [text.slice(0, 120)],
       };
     }
+
+    const data: ApiValidateResponse | any = await r.json();
 
     if (!r.ok) {
       const detail = data?.detail ? String(data.detail) : `Server returned ${r.status}`;
@@ -86,7 +102,15 @@ export function InputValidator() {
       errors: Array.isArray(data.errors) ? data.errors.map(String) : [],
       warnings: Array.isArray(data.notes) ? data.notes.map(String) : [],
     };
+  } catch (err: any) {
+    return {
+      isValid: false,
+      sanitized: "",
+      errors: [err?.message ? String(err.message) : "Network error while validating field."],
+      warnings: [],
+    };
   }
+}
 
   const handleValidate = async () => {
     setLoading(true);
