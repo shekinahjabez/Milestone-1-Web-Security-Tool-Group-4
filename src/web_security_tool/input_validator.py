@@ -1,6 +1,7 @@
 import re
 import html
 
+
 class InputValidator:
     """
     Logic-only validator/sanitizer for 4 web-form fields:
@@ -11,11 +12,50 @@ class InputValidator:
     def sanitize_input(text: str, field_type: str):
         """
         Sanitizes input by removing/neutralizing dangerous patterns.
+
+        NEW BEHAVIOR (per request):
+        - If SQL keywords / SQL-injection patterns are detected:
+          -> DO NOT sanitize
+          -> return original input unchanged
+          -> include a warning note
         Returns: (sanitized_text, was_sanitized, notes[list[str]])
         """
         original = "" if text is None else str(text)
         t = original
         notes = []
+
+        ft = (field_type or "").lower().strip()
+
+        # -------------------------------------------------
+        # 0) SQL keyword/pattern detection => DO NOT sanitize
+        # (recommended to enforce mainly on "message", but
+        #  we apply it generally unless you want message-only)
+        # -------------------------------------------------
+        sql_detect_patterns = [
+            r"'\s*or\s*'1'\s*=\s*'1",
+            r'"\s*or\s*"1"\s*=\s*"1',
+            r"\bunion\b\s+\bselect\b",
+            r"\bselect\b",
+            r"\binsert\b",
+            r"\bupdate\b",
+            r"\bdelete\b",
+            r"\bdrop\b",
+            r"\btruncate\b",
+            r"\bwhere\b",
+            r"\bexec(?:ute)?\b",
+            r"--",
+            r"/\*",
+            r"\*/",
+        ]
+
+        # If you want this ONLY for message field, uncomment the next line
+        # and change the condition below to: if message_only and any(...):
+        # message_only = (ft == "message")
+
+        if any(re.search(p, t, flags=re.IGNORECASE) for p in sql_detect_patterns):
+            notes.append("⚠️ SQL keyword/pattern detected — input was NOT sanitized")
+            # Return original text unchanged (no sanitization)
+            return original, False, notes
 
         # -------------------
         # 1) Remove script blocks completely
@@ -35,6 +75,9 @@ class InputValidator:
 
         # -------------------
         # 3) Neutralize common SQL injection patterns
+        # NOTE: For SQL-like input we return early above.
+        # This is kept for extra defense-in-depth in case
+        # you later scope the early-return to message only.
         # -------------------
         sql_patterns = [
             r"'\s*or\s*'1'\s*=\s*'1",
@@ -55,7 +98,6 @@ class InputValidator:
 
         # -------------------
         # 4) Escape any remaining HTML tags/angle brackets
-        # (turns < > into &lt; &gt; so tags can't run)
         # -------------------
         escaped = html.escape(t)
         if escaped != t:
@@ -67,26 +109,26 @@ class InputValidator:
         # -------------------
         unescaped = html.unescape(t)
 
-        if field_type == "name":
+        if ft in ("name", "full_name", "fullname"):
             cleaned = re.sub(r"[^a-zA-Z\s'-]", "", unescaped)
             if cleaned != unescaped:
                 notes.append("Invalid characters removed from name")
             t = cleaned.strip()
 
-        elif field_type == "email":
+        elif ft == "email":
             cleaned = unescaped.replace(" ", "")
             cleaned2 = re.sub(r"[^a-zA-Z0-9@._+-]", "", cleaned)
             if cleaned2 != unescaped:
                 notes.append("Invalid characters/spaces removed from email")
             t = cleaned2.strip()
 
-        elif field_type == "username":
+        elif ft == "username":
             cleaned = re.sub(r"[^a-zA-Z0-9_]", "", unescaped)
             if cleaned != unescaped:
                 notes.append("Invalid characters removed from username")
             t = cleaned.strip()
 
-        elif field_type == "message":
+        elif ft == "message":
             # keep content, but it's already script/img/sql-neutralized + escaped
             t = t.strip()
 
@@ -101,6 +143,7 @@ class InputValidator:
             notes.append("Whitespace normalized")
 
         was_sanitized = (t != original) or (len(notes) > 0)
+
         # Remove duplicate notes while preserving order
         seen = set()
         notes = [n for n in notes if not (n in seen or seen.add(n))]
