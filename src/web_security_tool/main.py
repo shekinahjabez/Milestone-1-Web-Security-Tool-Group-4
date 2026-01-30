@@ -4,7 +4,7 @@ from .gui.analyze import StrengthFrame
 from .gui.generate import GeneratorFrame
 from .gui.validate import ValidatorFrame
 
-from .gui.components.tool_card import ToolCard  # ✅ NEW import
+from .gui.components.tool_card import ToolCard 
 
 
 # LIGHT palette (matches your screenshot + React Tailwind)
