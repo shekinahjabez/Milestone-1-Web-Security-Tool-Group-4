@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CheckCircle2, XCircle, Shield, Clock } from "lucide-react";
+import { CheckCircle2, XCircle, Shield} from "lucide-react";
 
 interface FormData {
   fullName: string;
