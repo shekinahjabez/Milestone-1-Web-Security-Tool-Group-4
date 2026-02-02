@@ -1,5 +1,0 @@
-{
-    "python.analysis.extraPaths": [
-        "./password_generator.py input_validator.py"
-    ]
-}

@@ -1,0 +1,99 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pkl
+*.egg-info/
+*.egg
+.env
+.env.*
+.venv/
+.venv*/
+venv/
+ENV/
+env/
+.python-version
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+*.cover
+*.py,cover
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+pnpm-debug.log*
+
+# Runtime data
+password_history.json
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Node/Vite
+node_modules/
+dist/
+dist-ssr/
+build/
+.cache/
+.vite/
+.next/
+out/
+.nuxt/
+.output/
+*.local
+
+# IDE & Dev Containers
+.vscode/
+*.code-workspace
+.devcontainer/
+
+# JetBrains
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Testing
+coverage/
+*.lcov
+.nyc_output
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Package manager locks (optional - uncomment if needed)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Legacy/untracked folder
+web security tool/
