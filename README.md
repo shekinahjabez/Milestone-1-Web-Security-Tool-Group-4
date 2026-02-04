@@ -23,23 +23,30 @@ The tool is designed to be **modular**, **easy to extend**, and **beginner-frien
 ## 🚀 Features
 
 - ✅ **Password Strength Assessment**
-  - Checks for common passwords
-  - Dictionary word detection
-  - Length and complexity validation
-  - Entropy scoring using `zxcvbn`
+  - Checks for common passwords, dictionary words, length, and complexity.
+  - Provides an entropy score using `zxcvbn`.
+  
+  ![Password Strength Analyzer](./screenshots/password_strength_analyzer.png)
 
 - 🔐 **Password Generator**
-  - Generates strong, random passwords
-  - Supports customizable length and character sets
-  - Uses secure randomization
+  - Generates strong, random passwords.
+  - Supports customizable length and character sets.
+
+  ![Password Generator](./screenshots/password_generator.png)
+
+- 🛡️ **Input Validator**
+  - Validates common input fields like names, emails, and usernames.
+  - Sanitizes input to protect against basic SQL injection patterns.
+
+  ![Input Validator](./screenshots/input_validator.png)
 
 - 🧩 **Modular Architecture**
-  - Easy to maintain and extend
-  - Separate components for assessment, generation, and utilities
+  - Easy to maintain and extend.
+  - Separate components for assessment, generation, and utilities.
 
-- 🖥️ **Simple GUI / CLI Interface**
-  - User-friendly interaction
-  - Designed for academic demonstration
+- 🖥️ **Simple GUI / Web Interface**
+  - User-friendly interaction for both desktop and web.
+  - Designed for academic demonstration.
 
 ---
 
@@ -47,47 +54,40 @@ The tool is designed to be **modular**, **easy to extend**, and **beginner-frien
 
 ```
 Milestone-1-Web-Security-Tool-Group-4/
-├── .devcontainer/              # Dev container configuration
 ├── .gitignore
 ├── api.py                      # FastAPI backend server
 ├── run.py                      # Desktop GUI launcher
 ├── requirements.txt            # Python dependencies
 ├── runtime.txt                 # Python version for deployment
-├── password_history.json       # Password generation history
 ├── README.md
 │
 ├── frontend/                   # React + TypeScript frontend
+│   ├── public/
 │   ├── src/
+│   │   ├── assets/
 │   │   ├── components/
-│   │   │   ├── PasswordStrength.tsx    # Password analyzer component
-│   │   │   ├── PasswordGenerator.tsx   # Password generator component
-│   │   │   └── InputValidator.tsx      # Input validation component
+│   │   │   ├── PasswordStrength.tsx
+│   │   │   ├── PasswordGenerator.tsx
+│   │   │   └── InputValidator.tsx
 │   │   ├── App.tsx             # Main React app
 │   │   └── main.tsx            # React entry point
 │   ├── package.json
-│   ├── vite.config.ts          # Vite configuration
-│   └── tsconfig.json           # TypeScript configuration
+│   └── vite.config.ts
 │
 ├── src/
 │   └── web_security_tool/      # Python backend modules
+│       ├── __init__.py
+│       ├── input_validator.py
 │       ├── main.py             # CustomTkinter GUI main app
-│       ├── password_assessor.py    # Password strength analysis
-│       ├── password_generator.py   # Secure password generation
-│       ├── input_validator.py      # Input validation logic
-│       ├── services.py         # Core business logic
-│       ├── utils.py            # Utility functions
+│       ├── password_assessor.py
+│       ├── password_generator.py
+│       ├── services.py
+│       ├── utils.py
 │       └── gui/                # GUI components
-│           ├── analyze.py      # Password analysis GUI
-│           ├── generate.py     # Password generator GUI
-│           ├── validate.py     # Input validator GUI
-│           └── components/     # Reusable GUI components
-│               ├── buttons.py
-│               ├── icon_tile.py
-│               ├── section_title.py
-│               └── tool_card.py
-│
-└── logs/                       # Application logs
-    └── security_log.txt
+│           ├── components/     # Reusable GUI components
+│           ├── analyze.py
+│           ├── generate.py
+│           └── validate.py
 ```
 
 ---
